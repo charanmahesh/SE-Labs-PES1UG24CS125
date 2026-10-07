@@ -18,6 +18,9 @@ class GameEngine:
         self.game_state = "PLAYING"
 
         self.computer_pull_cooldown = 180
+        self.panic_pull_cooldown = 80
+        self.panic_threshold = self.rope.left_win_x + 80
+        self.panic_pull_strength = 1.5
         self.last_computer_pull = pygame.time.get_ticks()
 
         self.font_big = pygame.font.SysFont(None, 48)
@@ -50,9 +53,23 @@ class GameEngine:
             return
 
         now = pygame.time.get_ticks()
-        if now - self.last_computer_pull >= self.computer_pull_cooldown:
+
+        # Enter a panic surge when the marker gets close to the player's
+        # winning side. The existing AI still pulls on a cooldown, but
+        # becomes faster and stronger while in danger.
+        in_panic = self.rope.marker_x <= self.panic_threshold
+        current_cooldown = (
+            self.panic_pull_cooldown if in_panic else self.computer_pull_cooldown
+        )
+
+        if now - self.last_computer_pull >= current_cooldown:
             computer_variance = random.uniform(0.7, 1.2)
-            self.rope.pull_right(computer_variance)
+            pull_strength = (
+                computer_variance * self.panic_pull_strength
+                if in_panic
+                else computer_variance
+            )
+            self.rope.pull_right(pull_strength)
             self.last_computer_pull = now
 
         result = self.rope.check_winner()
