@@ -11,14 +11,20 @@ class Puller:
         self.label = label
         self.font = pygame.font.SysFont(None, 24)
 
-    def render(self, surface):
-        """Draw avatar and label."""
+    def render(self, surface, lean=0.0):
+        """Draw avatar and label with a small visual lean while pulling."""
+        # Lean is a visual-only rotation-like offset; it does not affect gameplay.
+        body_shift = int(self.y * lean)
+        head_shift = int((self.y - 50) * lean)
+
         # Body
-        body_rect = pygame.Rect(self.x - 20, self.y - 35, 40, 70)
+        body_rect = pygame.Rect(self.x - 20 + body_shift, self.y - 35, 40, 70)
         pygame.draw.rect(surface, self.color, body_rect, border_radius=6)
 
         # Head
-        pygame.draw.circle(surface, (240, 210, 180), (self.x, self.y - 50), 16)
+        pygame.draw.circle(
+            surface, (240, 210, 180), (self.x + head_shift, self.y - 50), 16
+        )
 
         # Name / control tag
         label_surf = self.font.render(self.label, True, (240, 240, 240))

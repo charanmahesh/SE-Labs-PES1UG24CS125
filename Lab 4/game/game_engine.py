@@ -18,9 +18,6 @@ class GameEngine:
         self.game_state = "PLAYING"
 
         self.computer_pull_cooldown = 180
-        self.panic_pull_cooldown = 80
-        self.panic_threshold = self.rope.left_win_x + 80
-        self.panic_pull_strength = 1.5
         self.last_computer_pull = pygame.time.get_ticks()
 
         self.font_big = pygame.font.SysFont(None, 48)
@@ -53,23 +50,9 @@ class GameEngine:
             return
 
         now = pygame.time.get_ticks()
-
-        # Enter a panic surge when the marker gets close to the player's
-        # winning side. The existing AI still pulls on a cooldown, but
-        # becomes faster and stronger while in danger.
-        in_panic = self.rope.marker_x <= self.panic_threshold
-        current_cooldown = (
-            self.panic_pull_cooldown if in_panic else self.computer_pull_cooldown
-        )
-
-        if now - self.last_computer_pull >= current_cooldown:
+        if now - self.last_computer_pull >= self.computer_pull_cooldown:
             computer_variance = random.uniform(0.7, 1.2)
-            pull_strength = (
-                computer_variance * self.panic_pull_strength
-                if in_panic
-                else computer_variance
-            )
-            self.rope.pull_right(pull_strength)
+            self.rope.pull_right(computer_variance)
             self.last_computer_pull = now
 
         result = self.rope.check_winner()
@@ -92,8 +75,26 @@ class GameEngine:
         pygame.draw.rect(screen, (45, 38, 30), mud_rect, border_radius=12)
 
         self.rope.render(screen)
-        self.player.render(screen)
-        self.computer.render(screen)
+
+        # Use the marker position as the current visual indication of which
+        # side is winning the struggle. This only affects rendering.
+        center_x = self.width / 2
+        displacement = self.rope.marker_x - center_x
+        max_displacement = max(center_x - self.rope.left_win_x, 1)
+        struggle = min(abs(displacement) / max_displacement, 1.0)
+
+        if displacement < 0:
+            player_lean = -0.18 * struggle
+            computer_lean = 0.0
+        elif displacement > 0:
+            player_lean = 0.0
+            computer_lean = 0.18 * struggle
+        else:
+            player_lean = 0.0
+            computer_lean = 0.0
+
+        self.player.render(screen, lean=player_lean)
+        self.computer.render(screen, lean=computer_lean)
 
         inst_surf = self.font_small.render(
             "Alternate [A] and [D] keys rapidly to pull!", True, (210, 210, 210)

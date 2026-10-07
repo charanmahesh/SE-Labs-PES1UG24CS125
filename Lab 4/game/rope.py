@@ -1,3 +1,4 @@
+import math
 import pygame
 
 
@@ -30,13 +31,30 @@ class Rope:
         self.velocity = 0.0
 
     def render(self, surface):
-        pygame.draw.line(
-            surface,
-            (180, 140, 90),
-            (60, self.center_y),
-            (self.screen_width - 60, self.center_y),
-            10
-        )
+        # Visual-only tension: the farther the marker moves from center,
+        # the more the rope sags and vibrates. Game mechanics are unchanged.
+        center_x = self.screen_width / 2
+        displacement = self.marker_x - center_x
+        tension = min(abs(displacement) / max(center_x - self.left_win_x, 1), 1.0)
+        time = pygame.time.get_ticks() / 1000.0
+
+        points = []
+        start_x = 60
+        end_x = self.screen_width - 60
+        segments = 24
+        sag = 5 + 14 * tension
+        vibration = 1.5 + 3.5 * tension
+
+        for i in range(segments + 1):
+            ratio = i / segments
+            x = start_x + (end_x - start_x) * ratio
+            # Sag is strongest near the middle; vibration increases with tension.
+            sag_offset = sag * math.sin(math.pi * ratio)
+            wave = vibration * math.sin(time * 18.0 + ratio * 30.0)
+            y = self.center_y + sag_offset + wave
+            points.append((int(x), int(y)))
+
+        pygame.draw.lines(surface, (180, 140, 90), False, points, 10)
 
         pygame.draw.line(
             surface,
