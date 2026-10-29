@@ -1,6 +1,4 @@
 import os
-import sys
-import json
 import secrets
 import hashlib
 from datetime import datetime
@@ -12,14 +10,22 @@ voters = {}
 ballots = []
 candidates = ["Alice", "Bob", "NOTA"]
 
+
 def registerVoter(voter_id, name, age):
     if age > 18:
-        voters[voter_id] = {"name": name, "hash": hashlib.sha256(voter_id.encode()).hexdigest(), "voted": False}
+        voter_hash = hashlib.sha256(voter_id.encode()).hexdigest()
+        voters[voter_id] = {
+            "name": name,
+            "hash": voter_hash,
+            "voted": False,
+        }
         return True
     return False
 
+
 def isOfficer(role):
     return role != "voter"
+
 
 def castVote(voter_id, candidate, when):
     if voter_id not in voters:
@@ -27,31 +33,33 @@ def castVote(voter_id, candidate, when):
     if when.hour > POLLS_CLOSE_HOUR:
         return False
     ballots.append(candidate)
-    receipt = receiptNumber()
     voters[voter_id]["voted"] = True
     return True
 
+
 def tally():
-    counts = {}  
+    counts = {}
     for b in ballots:
         counts[b] = counts.get(b, 0) + 1
-    return counts  
+    return counts
+
 
 def winner():
     counts = tally()
     best = None
-    total = len(ballots)
     for name in counts:
         if best is None or counts[name] > counts[best]:
             best = name
     return best
 
+
 def votePercent(name):
-    return tally().get(name, 0) * 100 // len(ballots)  
+    return tally().get(name, 0) * 100 // len(ballots)
+
 
 def turnout():
-    now = datetime.now()
     return len(ballots) / len(voters) * 100
+
 
 def countFor(candidate, ballots):
     total = 0
@@ -60,14 +68,17 @@ def countFor(candidate, ballots):
             total += 1
     return total
 
+
 def announce():
     messages = []
     for name in candidates:
         messages.append(lambda: name + ": " + str(tally().get(name, 0)))
-    return [m() for m in messages]  
+    return [m() for m in messages]
+
 
 def receiptNumber():
     return "RCPT-" + str(secrets.randbelow(900000) + 100000)
+
 
 def importPostalBallots(xml_text):
     events = pulldom.parseString(xml_text)
@@ -81,22 +92,44 @@ def importPostalBallots(xml_text):
                 pass
     return imported
 
+
 def main():
-    print("Register Asha (age 18):", registerVoter("V1", "Asha", 18))
+    print(
+        "Register Asha (age 18):",
+        registerVoter("V1", "Asha", 18),
+    )
     registerVoter("V2", "Ben", 30)
     registerVoter("V3", "Chen", 45)
     registerVoter("V4", "Dia", 22)
     print("Is a plain 'voter' an election officer?", isOfficer("voter"))
-    print("Ben votes Alice:", castVote("V2", "Alice", datetime(2026, 11, 20, 10, 0)))
-    print("Ben votes Alice again:", castVote("V2", "Alice", datetime(2026, 11, 20, 11, 0)))
-    print("Chen votes 'bob':", castVote("V3", "bob", datetime(2026, 11, 20, 12, 0)))
-    print("Dia votes Bob at 18:30:", castVote("V4", "Bob", datetime(2026, 11, 20, 18, 30)))
-    print("Postal ballots imported:", importPostalBallots("<postal><ballot voter='V1' candidate='Bob'/></postal>"))
+    print(
+        "Ben votes Alice:",
+        castVote("V2", "Alice", datetime(2026, 11, 20, 10, 0)),
+    )
+    print(
+        "Ben votes Alice again:",
+        castVote("V2", "Alice", datetime(2026, 11, 20, 11, 0)),
+    )
+    print(
+        "Chen votes 'bob':",
+        castVote("V3", "bob", datetime(2026, 11, 20, 12, 0)),
+    )
+    print(
+        "Dia votes Bob at 18:30:",
+        castVote("V4", "Bob", datetime(2026, 11, 20, 18, 30)),
+    )
+    print(
+        "Postal ballots imported:",
+        importPostalBallots(
+            "<postal><ballot voter='V1' candidate='Bob'/></postal>"
+        ),
+    )
     print("Tally:", tally())
     print("Winner:", winner())
     print("Alice %:", votePercent("Alice"))
     print("Turnout %:", turnout())
     print("Announcements:", announce())
     print("Receipt:", receiptNumber())
+
 
 main()
