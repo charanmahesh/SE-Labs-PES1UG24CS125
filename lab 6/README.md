@@ -12,6 +12,7 @@ A small Python module that calculates a student's attendance percentage with med
 |------|-------------|
 | `attendance_eligibility.py` | The module under test |
 | `test_attendance_eligibility.py` | Starter test file |
+| `BranchCoverageTest_62_application.py` | Tests covering the module's decision branches |
 
 Keep all your Lab 6 work in this `LAB6` folder. Lab 7 will be added to this repo later.
 

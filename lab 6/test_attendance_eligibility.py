@@ -28,16 +28,3 @@ def test_attendance_warning_noncritical_outcomes():
     assert attendance_warning(85, 0) is None
     assert attendance_warning(74, 4) == "final notice"
     assert attendance_warning(75, 0) == "reminder"
-
-
-def test_attendance_percent_rejects_attendance_above_total():
-    with pytest.raises(ValueError, match="invalid attended count"):
-        attendance_percent(11, 10, 0)
-
-
-def test_exam_eligibility_with_condonation():
-    assert exam_eligibility(65, True, True) == "eligible"
-
-
-def test_attendance_warning_critical_with_more_than_four_weeks_left():
-    assert attendance_warning(74, 5) == "critical"
